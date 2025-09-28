@@ -1,0 +1,58 @@
+import cv2
+import sys
+import numpy as np
+
+argv = sys.argv
+# python3 get_rect.py input_file block(odd number) constant
+# This reads the image file into a numpy array for processing.
+image_path = argv[1]
+image = cv2.imread(image_path)
+if image is None:
+    raise ValueError(f"Image not found or unable to load at path: {image_path}")
+
+# Print basic image info for debugging
+print(f"Image loaded successfully. Shape: {image.shape} (height, width, channels)")
+
+# Convert to grayscale
+# Grayscale simplifies edge detection by reducing to one channel.
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+print("Converted to grayscale.")
+
+# Apply Gaussian blur to reduce noise
+# Blur helps smooth out minor variations that could create false edges.
+blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+print("Applied Gaussian blur.")
+
+
+## use adaptive threshhold
+# After Gaussian blur on gray...
+# default ...BINARY_INV, block 31, constant 2)
+# after experimenting with different parameters (grok guessed values using knowledge from prior attempts) we have set 
+# block to 61 and constant to 8
+thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 61 ,8 )  # Block size 31 (odd), constant 2; tweak if noisy
+
+# Optional: dilate to connect gaps from glare (kernel size 5x5, once)
+kernel = np.ones((5,5), np.uint8)
+thresh = cv2.dilate(thresh, kernel, iterations=1)
+
+# Now find contours on thresh (not edges)
+contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Then sort and loop/filter as before...
+# In the filter: up the min area to ~10000 if small junk slips in; lower mean threshold to <80 for grey screens
+
+# Use Canny edge detection
+# Lowered thresholds for more edges: low=30 detects weaker edges, high=100 caps stronger ones.
+
+contours = sorted(contours, key=lambda c: cv2.boundingRect(c)[0])
+
+## lets copy the original image "output.png" so that we can add the contours to it
+img_copy = image.copy()
+
+## now lets save these contours for debugging
+for i, cnt in enumerate(contours):
+    cv2.drawContours(img_copy, [cnt], 0, (0, 0, 255), 2)
+
+cv2.imwrite("adaptive_B"+argv[2]+"_C"+argv[3]+".png", img_copy)
+print("Saved contours image as 'contours_B"+argv[2]+"_C"+argv[3]+".png'.")
+

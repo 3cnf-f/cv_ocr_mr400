@@ -1,0 +1,50 @@
+import cv2
+import numpy as np
+
+# Load the image (replace 'your_image_path.jpg' with the actual path to the uploaded image)
+# This reads the image file into a numpy array for processing.
+image_path = 'output.png'
+image = cv2.imread(image_path)
+if image is None:
+    raise ValueError(f"Image not found or unable to load at path: {image_path}")
+
+# Print basic image info for debugging
+print(f"Image loaded successfully. Shape: {image.shape} (height, width, channels)")
+
+# Convert to grayscale
+# Grayscale simplifies edge detection by reducing to one channel.
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+print("Converted to grayscale.")
+
+# Apply Gaussian blur to reduce noise
+# Blur helps smooth out minor variations that could create false edges.
+blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+print("Applied Gaussian blur.")
+
+# Use Canny edge detection
+# Lowered thresholds for more edges: low=30 detects weaker edges, high=100 caps stronger ones.
+edges = cv2.Canny(blurred, 30, 100)
+print("Applied Canny edge detection with adjusted thresholds.")
+
+cv2.imwrite('edges.png', edges)
+print("Saved edges image as 'edges.png'.")
+# check what edges are detected
+
+
+
+# Find contours from the edges
+contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Sort contours left-to-right by bounding box x-coordinate (to number screens 1-3)
+contours = sorted(contours, key=lambda c: cv2.boundingRect(c)[0])
+
+## lets copy the original image "output.png" so that we can add the contours to it
+img_copy = image.copy()
+
+## now lets save these contours for debugging
+for i, cnt in enumerate(contours):
+    cv2.drawContours(img_copy, [cnt], 0, (0, 0, 255), 2)
+
+cv2.imwrite('contours.png', img_copy)
+print("Saved contours image as 'contours.png'.")
+

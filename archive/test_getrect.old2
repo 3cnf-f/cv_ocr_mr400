@@ -1,0 +1,90 @@
+import cv2
+import numpy as np
+
+# Load the image (replace 'your_image_path.jpg' with the actual path to the uploaded image)
+# This reads the image file into a numpy array for processing.
+image_path = 'output.png'
+image = cv2.imread(image_path)
+if image is None:
+    raise ValueError(f"Image not found or unable to load at path: {image_path}")
+
+# Print basic image info for debugging
+print(f"Image loaded successfully. Shape: {image.shape} (height, width, channels)")
+
+# Convert to grayscale
+# Grayscale simplifies edge detection by reducing to one channel.
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+print("Converted to grayscale.")
+
+# Apply Gaussian blur to reduce noise
+# Blur helps smooth out minor variations that could create false edges.
+blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+print("Applied Gaussian blur.")
+
+# Use Canny edge detection
+# Canny finds edges based on intensity gradients; lower thresholds detect more edges.
+edges = cv2.Canny(blurred, 50, 150)
+print("Applied Canny edge detection.")
+
+# Optionally save edges for visual inspection
+cv2.imwrite('edges.jpg', edges)
+print("Saved edge-detected image as 'edges.jpg' for debugging.")
+
+# Find contours
+# Contours are outlines of shapes detected from edges.
+contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+print(f"Found {len(contours)} contours in total.")
+
+# Filter contours to find potential screen rectangles
+screens = []
+for i, contour in enumerate(contours):
+    # Approximate the contour to a polygon
+    # This reduces points while preserving shape; epsilon controls approximation accuracy.
+    approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), closed=True)
+    
+    # Calculate area for filtering small noise contours
+    area = cv2.contourArea(contour)
+    print(f"Contour {i}: Approx sides = {len(approx)}, Area = {area}")
+    
+    # Check if it's a quadrilateral (4 sides) and has sufficient area
+    # Area threshold prevents detecting tiny objects; adjust if screens are smaller.
+    if len(approx) == 4 and area > 3000:  # Lowered area threshold for more leniency
+        # Get bounding rectangle
+        x, y, w, h = cv2.boundingRect(approx)
+        
+        # Calculate aspect ratio (width/height)
+        aspect_ratio = w / float(h)
+        print(f"Contour {i}: Bounding rect (x,y,w,h) = ({x},{y},{w},{h}), Aspect ratio = {aspect_ratio:.2f}")
+        
+        # Filter by aspect ratio (screens are roughly rectangular, wider than tall)
+        # Adjusted range to be broader in case screens are more square or elongated.
+        if 1.0 < aspect_ratio < 2.5:  # Broadened aspect ratio for better detection
+            screens.append((x, y, w, h))
+            print(f"Contour {i}: Accepted as screen.")
+
+# Sort screens by x-coordinate to order them left to right
+screens.sort(key=lambda rect: rect[0])
+print(f"Total screens detected: {len(screens)}")
+
+# Draw bounding boxes on the image for visualization
+# Use a copy to avoid modifying the original image.
+output = image.copy()
+for i, (x, y, w, h) in enumerate(screens):
+    cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    cv2.putText(output, f"Screen {i+1}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+# Display the result in a window
+# This opens a window showing the image with drawings.
+cv2.imshow('Detected Screens', output)
+cv2.waitKey(0)  # Wait for any key press to close
+cv2.destroyAllWindows()
+print("Displayed output window.")
+
+# Optionally save the output
+cv2.imwrite('detected_screens.jpg', output)
+print("Saved annotated image as 'detected_screens.jpg'.")
+
+# Print the bounding boxes
+print("Detected screen locations (x, y, width, height):")
+for rect in screens:
+    print(rect)

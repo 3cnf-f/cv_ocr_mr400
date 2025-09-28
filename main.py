@@ -1,12 +1,13 @@
 # claude_perspective_optimized.py
+import blackness
 import cv2
-import philips_detect
 import sys
 import numpy as np
 import os
 import logging
 from datetime import datetime
 import uuid
+from pathlib import Path
 # --- Script Setup ---
 if len(sys.argv) < 2:
     print("❌ Error: Please provide an image file path as an argument.")
@@ -14,9 +15,9 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 input_image = sys.argv[1]
-basename = input_image.replace(".png", "")
+basename = Path(input_image).stem #filename without extension
 basename = basename+"_out"
-foldername = basename+"_"+str(uuid.uuid4())+"/"
+foldername = str(uuid.uuid4())[:5]+"/"
 # Create the output folder
 os.makedirs(foldername, exist_ok=True)
 debuglevel = 0
@@ -81,7 +82,7 @@ def find_screens(image_path):
         width_ratio = w / float(img_width)
         height_ratio = h / float(img_height)
         aspect_ratio = w / float(h) if h > 0 else 0
-        isphilips=7
+        blackness_percentage = blackness.get_blackness_percentage(image[y:y+h,x:x+w])
         
         # Store candidate info
         candidate = {
@@ -89,7 +90,7 @@ def find_screens(image_path):
             'x': x, 'y': y, 'w': w, 'h': h,
             'aspect_ratio': aspect_ratio,
             'contour': contour,
-            'isphilips': isphilips
+            'blackness_percentage': blackness_percentage
         }
         
         # Define filtering criteria (you can adjust these if needed)
@@ -99,26 +100,22 @@ def find_screens(image_path):
         
         # Categorize candidate
         if width_check and height_check and aspect_check:
-            candidate['category'] = 'EXCELLENT'
+            candidate['category'] = 'EX'
             color = (0, 255, 0)  # Green
             thickness = 3
-            temp_img=image[y:y+h,x:x+w]
-            # isphilips=philips_detect.get_philips_logo_confidence(temp_img,debug=True,basename=foldername+"/"+str(candidate_id))
-            candidate['isphilips']=isphilips
-            print(isphilips,candidate['id'])
         else:
-            candidate['category'] = 'POOR' # Simplified category
+            candidate['category'] = 'PO' # Simplified category
             color = (128, 128, 128) # Gray
             thickness = 1
         
 
-        logging.info(f"Candidate #{candidate_id}: Pos({x},{y}) Size({w}x{h}) Aspect({aspect_ratio:.2f}) isphilips({candidate['isphilips']}) -> Category: {candidate['category']}")
+        logging.info(f"Candidate #{candidate_id}: Pos({x},{y}) Size({w}x{h}) Aspect({aspect_ratio:.2f}) Solidity({solidity:.2f}) Blackness({blackness_percentage:.2f}) -> Category: {candidate['category']}")
         
         all_candidates.append(candidate)
         
         # Draw on debug image
         cv2.rectangle(debug_img, (x, y), (x+w, y+h), color, thickness)
-        cv2.putText(debug_img, f"#{candidate_id} ({candidate['category']}) ({candidate['isphilips']})", (x+5, y+20),
+        cv2.putText(debug_img, f"#{candidate_id} ({candidate['category']}) ({candidate['blackness_percentage']:.2f})", (x+5, y+20),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         
         candidate_id += 1
@@ -129,8 +126,8 @@ def find_screens(image_path):
     # --- Final Selection Logic (with overlap removal) ---
     final_screens = []
     # Sort candidates to prioritize the best ones
-    sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EXCELLENT'],
-                              key=lambda c: c['w'] * c['h'], reverse=True) # Prioritize larger screens
+    sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
+                              key=lambda c: c['blackness_percentage'] , reverse=True) # Prioritize larger screens
 
     for candidate in sorted_candidates:
         if len(final_screens) >= 3:
@@ -163,6 +160,7 @@ def find_screens(image_path):
         logging.error("No final screens selected after filtering.")
     else:
         logging.info(f"Selected {len(final_screens)} final screens.")
+        final_screens = sorted(final_screens, key=lambda s: s['x'])
 
     for i, screen in enumerate(final_screens):
         x, y, w, h = screen['x'], screen['y'], screen['w'], screen['h']

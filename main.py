@@ -9,15 +9,16 @@ from datetime import datetime
 import uuid
 from pathlib import Path
 # --- Script Setup ---
-if len(sys.argv) < 2:
-    print("❌ Error: Please provide an image file path as an argument.")
-    print("Usage: python3 claude_perspective_optimized.py <path_to_image.png>")
+if len(sys.argv) < 3:
+    print("❌ Error: Please provide an image file path as an argument and a outputfolder path.")
+    print("Usage: python3 claude_perspective_optimized.py <path_to_image.png> folder")
     sys.exit(1)
 
 input_image = sys.argv[1]
 basename = Path(input_image).stem #filename without extension
 basename = basename+"_out"
-foldername = str(uuid.uuid4())[:5]+"/"
+foldername = sys.argv[2]
+foldername = foldername + "/"
 # Create the output folder
 os.makedirs(foldername, exist_ok=True)
 debuglevel = 0
@@ -27,7 +28,7 @@ logging.basicConfig(
     level=logging.INFO, # Changed to INFO for cleaner production output
     format='%(asctime)s-%(levelname)s-%(module)s-%(funcName)s- %(lineno)s- %(message)s',
     handlers=[
-        logging.FileHandler(foldername+'claude_log_optimized.log', mode='w'),
+        logging.FileHandler(foldername+'claude_log_optimized.log', mode='a'),
         logging.StreamHandler()
     ]
 )
@@ -83,6 +84,8 @@ def find_screens(image_path):
         height_ratio = h / float(img_height)
         aspect_ratio = w / float(h) if h > 0 else 0
         blackness_percentage = blackness.get_blackness_percentage(image[y:y+h,x:x+w])
+        offset_y_avg=99
+        
         
         # Store candidate info
         candidate = {
@@ -90,16 +93,18 @@ def find_screens(image_path):
             'x': x, 'y': y, 'w': w, 'h': h,
             'aspect_ratio': aspect_ratio,
             'contour': contour,
-            'blackness_percentage': blackness_percentage
+            'blackness_percentage': blackness_percentage,
+            'offset_y_avg': offset_y_avg
         }
         
         # Define filtering criteria (you can adjust these if needed)
         width_check = (0.15 * img_width) < w < (0.40 * img_width)
         height_check = (0.15 * img_height) < h < (0.43 * img_height)
         aspect_check = 0.8 < aspect_ratio < 2.5
+        blackness_check =  blackness_percentage > 0.5
         
         # Categorize candidate
-        if width_check and height_check and aspect_check:
+        if width_check and height_check and aspect_check and blackness_check:
             candidate['category'] = 'EX'
             color = (0, 255, 0)  # Green
             thickness = 3
@@ -125,9 +130,27 @@ def find_screens(image_path):
 
     # --- Final Selection Logic (with overlap removal) ---
     final_screens = []
+    y_ex_center_sum = 0
+    ex_num = 0
+
+    for candidate in all_candidates:
+        if candidate['category'] == 'EX':
+            y_ex_center_sum = y_ex_center_sum + (candidate['y'] + candidate['h'] / 2)
+            ex_num = ex_num + 1
+    y_ex_center_avg = y_ex_center_sum / ex_num
+
+    for candidate in all_candidates:
+        if candidate['category'] == 'EX':
+            candidate['offset_y_avg'] = abs(candidate['y'] + candidate['h'] / 2 - y_ex_center_avg) / (img_height / 2)
+
+            logging.info(f"EX_Candidate #{candidate_id}:  offset_y_avg({candidate['offset_y_avg']:.2f})")
+
+                
+
+
     # Sort candidates to prioritize the best ones
     sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
-                              key=lambda c: c['blackness_percentage'] , reverse=True) # Prioritize larger screens
+                              key=lambda c: (c['blackness_percentage']-49)/50 *c['w']*c['h'], reverse=True) # Prioritize larger screens
 
     for candidate in sorted_candidates:
         if len(final_screens) >= 3:

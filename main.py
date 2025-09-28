@@ -1,6 +1,5 @@
 # claude_perspective_optimized.py
 import blackness
-import ocr_tesseract
 import sys
 import numpy as np
 import cv2
@@ -100,7 +99,7 @@ def find_screens(image_path):
         
         # Define filtering criteria (you can adjust these if needed)
         width_check = (0.15 * img_width) < w < (0.40 * img_width)
-        height_check = (0.15 * img_height) < h < (0.43 * img_height)
+        height_check = (0.15 * img_height) < h < (0.6 * img_height)
         aspect_check = 0.8 < aspect_ratio < 2.5
         blackness_check =  blackness_percentage > 50
         
@@ -153,7 +152,7 @@ def find_screens(image_path):
     # sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
     #                           key=lambda c: (c['blackness_percentage']-49)/50 *c['w']*c['h'], reverse=True) # Prioritize larger screens
     sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
-                              key=lambda c: (abs(c['avg_y']-y_ex_center_avg), reversed==True)) # Prioritize closer to y avg 
+                              key=lambda c: (c['avg_y'], reversed==True)) # Prioritize closer to y avg 
 
     for candidate in sorted_candidates:
         if len(final_screens) >= 3:
@@ -197,7 +196,6 @@ def find_screens(image_path):
         # Save individual screen ROI (Region of Interest)
         screen_roi = image[y:y+h, x:x+w]
         cv2.imwrite(foldername+f'{basename}_08_final_screen_{i+1}.png', screen_roi)
-        ocr_tesseract.extract_temperature(screen_roi)
         
         logging.info(f"=== FINAL SCREEN {i+1} (from Cand. #{screen['id']}) ===")
         logging.info(f"  Position: ({x}, {y}), Size: {w}x{h}")

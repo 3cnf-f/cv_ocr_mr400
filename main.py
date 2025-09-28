@@ -1,8 +1,9 @@
 # claude_perspective_optimized.py
 import blackness
-import cv2
+import ocr_tesseract
 import sys
 import numpy as np
+import cv2
 import os
 import logging
 from datetime import datetime
@@ -84,7 +85,7 @@ def find_screens(image_path):
         height_ratio = h / float(img_height)
         aspect_ratio = w / float(h) if h > 0 else 0
         blackness_percentage = blackness.get_blackness_percentage(image[y:y+h,x:x+w])
-        offset_y_avg=99
+        avg_y=(y+y+h)/2
         
         
         # Store candidate info
@@ -94,14 +95,14 @@ def find_screens(image_path):
             'aspect_ratio': aspect_ratio,
             'contour': contour,
             'blackness_percentage': blackness_percentage,
-            'offset_y_avg': offset_y_avg
+            'avg_y': avg_y
         }
         
         # Define filtering criteria (you can adjust these if needed)
         width_check = (0.15 * img_width) < w < (0.40 * img_width)
         height_check = (0.15 * img_height) < h < (0.43 * img_height)
         aspect_check = 0.8 < aspect_ratio < 2.5
-        blackness_check =  blackness_percentage > 0.5
+        blackness_check =  blackness_percentage > 50
         
         # Categorize candidate
         if width_check and height_check and aspect_check and blackness_check:
@@ -114,7 +115,7 @@ def find_screens(image_path):
             thickness = 1
         
 
-        logging.info(f"Candidate #{candidate_id}: Pos({x},{y}) Size({w}x{h}) Aspect({aspect_ratio:.2f}) Solidity({solidity:.2f}) Blackness({blackness_percentage:.2f}) -> Category: {candidate['category']}")
+        logging.info(f"Candidate #{candidate_id}: Pos({x},{y}) Size({w}x{h}) Aspect({aspect_ratio:.2f}) Solidity({solidity:.2f}) Blackness({blackness_percentage:.2f}) y_avg({avg_y:.2f}) -> Category: {candidate['category']}")
         
         all_candidates.append(candidate)
         
@@ -135,22 +136,24 @@ def find_screens(image_path):
 
     for candidate in all_candidates:
         if candidate['category'] == 'EX':
-            y_ex_center_sum = y_ex_center_sum + (candidate['y'] + candidate['h'] / 2)
+            y_ex_center_sum = y_ex_center_sum + (candidate['avg_y'])
             ex_num = ex_num + 1
     y_ex_center_avg = y_ex_center_sum / ex_num
+    logging.info(f"y_ex_center_avg: {y_ex_center_avg}")
 
     for candidate in all_candidates:
         if candidate['category'] == 'EX':
-            candidate['offset_y_avg'] = abs(candidate['y'] + candidate['h'] / 2 - y_ex_center_avg) / (img_height / 2)
 
-            logging.info(f"EX_Candidate #{candidate_id}:  offset_y_avg({candidate['offset_y_avg']:.2f})")
+            logging.info(f"EX_Candidate #{candidate_id}:  avg_y #({candidate['avg_y']:.2f})")
 
                 
 
 
     # Sort candidates to prioritize the best ones
+    # sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
+    #                           key=lambda c: (c['blackness_percentage']-49)/50 *c['w']*c['h'], reverse=True) # Prioritize larger screens
     sorted_candidates = sorted([c for c in all_candidates if c['category'] == 'EX'],
-                              key=lambda c: (c['blackness_percentage']-49)/50 *c['w']*c['h'], reverse=True) # Prioritize larger screens
+                              key=lambda c: (abs(c['avg_y']-y_ex_center_avg), reversed==True)) # Prioritize closer to y avg 
 
     for candidate in sorted_candidates:
         if len(final_screens) >= 3:
@@ -194,6 +197,7 @@ def find_screens(image_path):
         # Save individual screen ROI (Region of Interest)
         screen_roi = image[y:y+h, x:x+w]
         cv2.imwrite(foldername+f'{basename}_08_final_screen_{i+1}.png', screen_roi)
+        ocr_tesseract.extract_temperature(screen_roi)
         
         logging.info(f"=== FINAL SCREEN {i+1} (from Cand. #{screen['id']}) ===")
         logging.info(f"  Position: ({x}, {y}), Size: {w}x{h}")

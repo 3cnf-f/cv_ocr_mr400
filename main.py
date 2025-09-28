@@ -19,6 +19,7 @@ basename = basename+"_out"
 foldername = basename+"_"+str(uuid.uuid4())+"/"
 # Create the output folder
 os.makedirs(foldername, exist_ok=True)
+debuglevel = 0
 
 # Setup logging
 logging.basicConfig(
@@ -53,7 +54,8 @@ def find_screens(image_path):
     # Using the "higher" setting (40, 120) which was found to be most effective.
     low_thresh, high_thresh = 40, 120
     edges = cv2.Canny(blurred, low_thresh, high_thresh)
-    cv2.imwrite(foldername+f'{basename}_05_edges.png', edges)
+    if debuglevel>2: cv2.imwrite(foldername+f'{basename}_05_edges.png', edges)
+
     logging.info(f"Using optimized edge detection: Canny({low_thresh}, {high_thresh})")
     
     # --- Contour Detection and Filtering ---
@@ -184,7 +186,7 @@ def find_screens(image_path):
 if __name__ == "__main__":
     logging.info(f"=== Monitor Detection Log - {datetime.now()} ===\n")
     
-    screens = find_screens_optimized(input_image)
+    screens = find_screens(input_image)
     
     if screens:
         print(f"\n✅ SUCCESS: Detected {len(screens)} screens.")

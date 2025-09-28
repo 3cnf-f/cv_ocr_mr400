@@ -1,36 +1,46 @@
 import pytesseract
 import cv2
 import logging
-import os
 
 logging = logging.getLogger(__name__)
 pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
-def extract_temperature(image, threshold=150, maxval=255, thresh_type=0, psm=6, whitelist='0123456789.', crop_roi=None):
-    # Optional crop to focus on temperature area (bottom-left, e.g., [h-150:h, 0:300])
+def extract_temperature(image, threshold=150, maxval=255, thresh_type=0, psm=6, whitelist='0123456789.', crop_roi=None, morph_op=None, kernel_size=3, invert=False, resize_factor=2.0):
+    # Optional crop to focus on temperature area (bottom-left, e.g., [x, y, w, h])
     if crop_roi:
         x, y, w, h = crop_roi
-        image = image[y:y+h, x:x+w]
+        cropped = image[y:y+h, x:x+w]
+    else:
+        cropped = image
+
+    # Resize for better OCR (upscale)
+    if resize_factor > 1.0:
+        cropped = cv2.resize(cropped, None, fx=resize_factor, fy=resize_factor, interpolation=cv2.INTER_CUBIC)
 
     # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    if not os.path.exists('gray.png'):
-        cv2.imwrite('gray.png', gray)
+    gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
 
     # Optional Gaussian blur to reduce noise
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
-    if not os.path.exists('gray_gauss.png'):
-        cv2.imwrite('gray_gauss.png', gray)
 
     # Apply threshold
     _, thresh = cv2.threshold(gray, threshold, maxval, thresh_type)
 
-    # Optional invert if needed (after thresholding)
-    # thresh = cv2.bitwise_not(thresh)
-    ifcrop=True if crop_roi else False
-    
-    if not os.path.exists(f'thres{threshold}-{maxval}-{thresh_type}-{ifcrop}.png'):
-        cv2.imwrite(f'thres{threshold}-{maxval}-{thresh_type}-{ifcrop}.png', thresh)
+    # Optional morphological operation to separate stuck digits
+    if morph_op:
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+        if morph_op == 'erode':
+            thresh = cv2.erode(thresh, kernel, iterations=1)
+        elif morph_op == 'dilate':
+            thresh = cv2.dilate(thresh, kernel, iterations=1)
+        elif morph_op == 'open':
+            thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+        elif morph_op == 'close':
+            thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+
+    # Optional invert (for white text on black background to black on white)
+    if invert:
+        thresh = cv2.bitwise_not(thresh)
 
     # Build Tesseract config
     config = f'--oem 3 --psm {psm}'
@@ -38,17 +48,19 @@ def extract_temperature(image, threshold=150, maxval=255, thresh_type=0, psm=6, 
         config += f' -c tessedit_char_whitelist={whitelist}'
 
     # OCR
+    cv2.imwrite(f'th{thresh_type}_{psm}_{crop_roi}_{morph_op}_{kernel_size}_{invert}_{resize_factor}.png', thresh)
     text = pytesseract.image_to_string(thresh, config=config)
     logging.info(text)
 
     # Search for temperature pattern (e.g., "32.0" or "31.8")
-    for line in text.split('\n'):
-        if '.' in line and any(c.isdigit() for c in line):
-            temp = ''.join(filter(lambda x: x.isdigit() or x == '.', line.strip()))
-            if temp and '.' in temp and len(temp.split('.')[1]) == 1:
-                return f"{temp}°C",text
+    import re
+    match = re.search(r'(\d+\.\d)', text)
+    if match:
+        temp = match.group(1)
+        if len(temp.split('.')[1]) == 1:  # Single decimal place
+            return f"{temp}°C"
 
-    return "Temperature not found",text
+    return "Temperature not found"
 
 # Example usage with experimentation
 if __name__ == "__main__":
@@ -58,18 +70,31 @@ if __name__ == "__main__":
         print("Error: Could not load image")
     else:
         h, w = image.shape[:2]
-        # Example crop: bottom 150px height, left 300px width (adjust based on your images)
-        example_crop = (0, h - 150, 300, 150)
+        # Example crop: bottom 200px height, left 400px width (adjust based on your images)
+        example_crop = (0, h - 200, 400, 200)
 
         # Experiment with parameters
-        thresh_types = [cv2.THRESH_BINARY, cv2.THRESH_BINARY_INV, cv2.THRESH_OTSU + cv2.THRESH_BINARY, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV]
-        psms = [6, 7, 8, 10]  # 6: block, 7: line, 8: word, 10: sparse
+        thresh_types = [cv2.THRESH_BINARY, cv2.THRESH_BINARY_INV]
+        psms = [6, 7, 8, 10, 11]  # Added 11: single line
+        morph_ops = [None, 'erode', 'open']
+        inverts = [True, False]
+        kernel_sizes = [1, 2, 3]
+        resize_factors = [1.5, 2.0, 3.0]
+
         for thresh_type in thresh_types:
             for psm_val in psms:
-                # With crop
-                temp_crop_a,temp_crop_b = extract_temperature(image, thresh_type=thresh_type, psm=psm_val, crop_roi=example_crop)
-                print(f"Type: {thresh_type}, PSM: {psm_val}, Crop: Yes -> result: {temp_crop_a} -> raw: {temp_crop_b}")
-                
-                # Without crop
-                temp_no_crop_a,temp_no_crop_b = extract_temperature(image, thresh_type=thresh_type, psm=psm_val)
-                print(f"Type: {thresh_type}, PSM: {psm_val}, Crop: No -> result: {temp_no_crop_a} -> raw: {temp_no_crop_b}")
+                for morph in morph_ops:
+                    for inv in inverts:
+                        for ksize in kernel_sizes:
+                            for rf in resize_factors:
+                                temp = extract_temperature(
+                                    image, 
+                                    thresh_type=thresh_type, 
+                                    psm=psm_val, 
+                                    crop_roi=example_crop, 
+                                    morph_op=morph, 
+                                    kernel_size=ksize, 
+                                    invert=inv, 
+                                    resize_factor=rf
+                                )
+                                print(f"Type: {thresh_type}, PSM: {psm_val}, Morph: {morph}, Kernel: {ksize}, Invert: {inv}, Resize: {rf} -> {temp}")

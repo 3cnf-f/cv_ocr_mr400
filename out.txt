@@ -1,0 +1,128 @@
+output_frame_001_out_08_final_screen_1.png 001 1
+[{'input_path': 'bunch8/output_frame_001_out_08_final_screen_1.png', 'page_index': None, 'doc_preprocessor_res': {'input_path': None, 'page_index': None, 'input_img': array([[[ 43, ...,  91],
+        ...,
+        [100, ..., 125]],
+
+       ...,
+
+       [[ 26, ...,  36],
+        ...,
+        [  9, ...,   9]]], shape=(454, 575, 3), dtype=uint8), 'model_settings': {'use_doc_orientation_classify': False, 'use_doc_unwarping': False}, 'angle': -1, 'rot_img': array([[[ 43, ...,  91],
+        ...,
+        [100, ..., 125]],
+
+       ...,
+
+       [[ 26, ...,  36],
+        ...,
+        [  9, ...,   9]]], shape=(454, 575, 3), dtype=uint8), 'output_img': array([[[ 43, ...,  91],
+        ...,
+        [100, ..., 125]],
+
+       ...,
+
+       [[ 26, ...,  36],
+        ...,
+        [  9, ...,   9]]], shape=(454, 575, 3), dtype=uint8)}, 'dt_polys': [array([[124,  23],
+       ...,
+       [125,  42]], shape=(4, 2), dtype=int16), array([[ 53, 196],
+       ...,
+       [ 58, 228]], shape=(4, 2), dtype=int16), array([[147, 330],
+       ...,
+       [153, 360]], shape=(4, 2), dtype=int16), array([[  0, 434],
+       ...,
+       [  1, 449]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': True, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 736, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['PHILIPS', 'Pausad', '32.0', 'MR400'], 'rec_scores': [0.9821173548698425, 0.999769389629364, 0.999638557434082, 0.999140739440918], 'rec_polys': [array([[124,  23],
+       ...,
+       [125,  42]], shape=(4, 2), dtype=int16), array([[ 53, 196],
+       ...,
+       [ 58, 228]], shape=(4, 2), dtype=int16), array([[147, 330],
+       ...,
+       [153, 360]], shape=(4, 2), dtype=int16), array([[  0, 434],
+       ...,
+       [  1, 449]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>], 'textline_orientation_angles': [-1, -1, -1, -1], 'rec_boxes': array([[124, ...,  42],
+       ...,
+       [  0, ..., 449]], shape=(4, 4), dtype=int16)}]
+output_frame_001_out_08_final_screen_2.png 001 2
+[{'input_path': 'bunch8/output_frame_001_out_08_final_screen_2.png', 'page_index': None, 'doc_preprocessor_res': {'input_path': None, 'page_index': None, 'input_img': array([[[107, ..., 143],
+        ...,
+        [103, ..., 124]],
+
+       ...,
+
+       [[ 74, ...,  91],
+        ...,
+        [ 83, ..., 112]]], shape=(267, 445, 3), dtype=uint8), 'model_settings': {'use_doc_orientation_classify': False, 'use_doc_unwarping': False}, 'angle': -1, 'rot_img': array([[[107, ..., 143],
+        ...,
+        [103, ..., 124]],
+
+       ...,
+
+       [[ 74, ...,  91],
+        ...,
+        [ 83, ..., 112]]], shape=(267, 445, 3), dtype=uint8), 'output_img': array([[[107, ..., 143],
+        ...,
+        [103, ..., 124]],
+
+       ...,
+
+       [[ 74, ...,  91],
+        ...,
+        [ 83, ..., 112]]], shape=(267, 445, 3), dtype=uint8)}, 'dt_polys': [array([[182,   8],
+       ...,
+       [182,  21]], shape=(4, 2), dtype=int16), array([[129, 115],
+       ...,
+       [130, 136]], shape=(4, 2), dtype=int16), array([[155, 206],
+       ...,
+       [158, 225]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': True, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 736, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['PHILIPS', 'Pausad', '31.8'], 'rec_scores': [0.992224395275116, 0.9995411038398743, 0.8964178562164307], 'rec_polys': [array([[182,   8],
+       ...,
+       [182,  21]], shape=(4, 2), dtype=int16), array([[129, 115],
+       ...,
+       [130, 136]], shape=(4, 2), dtype=int16), array([[155, 206],
+       ...,
+       [158, 225]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>], 'textline_orientation_angles': [-1, -1, -1], 'rec_boxes': array([[182, ...,  21],
+       ...,
+       [155, ..., 225]], shape=(3, 4), dtype=int16)}]
+output_frame_001_out_08_final_screen_3.png 001 3
+[{'input_path': 'bunch8/output_frame_001_out_08_final_screen_3.png', 'page_index': None, 'doc_preprocessor_res': {'input_path': None, 'page_index': None, 'input_img': array([[[ 85, ..., 106],
+        ...,
+        [118, ..., 134]],
+
+       ...,
+
+       [[ 53, ...,  67],
+        ...,
+        [154, ..., 174]]], shape=(228, 360, 3), dtype=uint8), 'model_settings': {'use_doc_orientation_classify': False, 'use_doc_unwarping': False}, 'angle': -1, 'rot_img': array([[[ 85, ..., 106],
+        ...,
+        [118, ..., 134]],
+
+       ...,
+
+       [[ 53, ...,  67],
+        ...,
+        [154, ..., 174]]], shape=(228, 360, 3), dtype=uint8), 'output_img': array([[[ 85, ..., 106],
+        ...,
+        [118, ..., 134]],
+
+       ...,
+
+       [[ 53, ...,  67],
+        ...,
+        [154, ..., 174]]], shape=(228, 360, 3), dtype=uint8)}, 'dt_polys': [array([[25,  5],
+       ...,
+       [25, 12]], shape=(4, 2), dtype=int16), array([[159,   9],
+       ...,
+       [159,  20]], shape=(4, 2), dtype=int16), array([[102,  97],
+       ...,
+       [101, 114]], shape=(4, 2), dtype=int16), array([[117, 177],
+       ...,
+       [117, 194]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': True, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 736, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['KIRteS', 'PHILIPS', 'Pausad', '32.5'], 'rec_scores': [0.4463566839694977, 0.9711807370185852, 0.9445059299468994, 0.9010603427886963], 'rec_polys': [array([[25,  5],
+       ...,
+       [25, 12]], shape=(4, 2), dtype=int16), array([[159,   9],
+       ...,
+       [159,  20]], shape=(4, 2), dtype=int16), array([[102,  97],
+       ...,
+       [101, 114]], shape=(4, 2), dtype=int16), array([[117, 177],
+       ...,
+       [117, 194]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>, <paddlex.utils.fonts.Font object at 0x7f32dc055810>], 'textline_orientation_angles': [-1, -1, -1, -1], 'rec_boxes': array([[ 25, ...,  12],
+       ...,
+       [117, ..., 195]], shape=(4, 4), dtype=int16)}]
